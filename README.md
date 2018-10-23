@@ -11,7 +11,12 @@ This plugin allows you to stream video in a fullscreen, native player on iOS and
 ## Installation
 
 ```
-cordova plugin add https://github.com/nchutchind/cordova-plugin-streaming-media
+cordova plugin add https://github.com/dan-leech/com.danleech.cordova.plugin.videoplayer
+```
+
+To remove
+```
+cordova plugin remove com.danleech.cordova.plugin.videoplayer
 ```
 
 ### iOS specifics
