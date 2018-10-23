@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+		id="com.danleech.cordova.plugin.videoplayer"
+		version="1.0.2">
+
+	<name>VideoPlayer</name>
+
+	<description>
+		This plugin allows you to launch a fullscreen streaming player for video on iOS and Android.
+	</description>
+
+	<license>MIT</license>
+
+	<keywords>Streaming, Media, Video, Android, iOS</keywords>
+
+	<engines>
+		<engine name="cordova" version=">=7.0.0" />
+	</engines>
+
+	<js-module src="www/VideoPlayer.js" name="VideoPlayer">
+		<clobbers target="cordova.plugins.VideoPlayer" />
+	</js-module>
+
+	<!-- ios -->
+	<platform name="ios">
+		<config-file target="config.xml" parent="/*">
+			<feature name="VideoPlayerPlugin">
+				<param name="ios-package" value="VideoPlayerPlugin" />
+			</feature>
+		</config-file>
+		<config-file target="*-Info.plist" parent="UIBackgroundModes">
+			<array>
+				<string>audio</string>
+				<string>fetch</string>
+			</array>
+		</config-file>
+		<header-file src="src/ios/LandscapeVideo.h" />
+		<source-file src="src/ios/LandscapeVideo.m" />
+		<header-file src="src/ios/PortraitVideo.h" />
+		<source-file src="src/ios/PortraitVideo.m" />
+		<header-file src="src/ios/VideoPlayerPlugin.h" />
+		<source-file src="src/ios/VideoPlayerPlugin.m" />
+		<framework src="MediaPlayer.framework" />
+	</platform>
+
+	<!-- android -->
+	<platform name="android">
+		<hook src="hooks/patch-android-studio-check.js" type="before_plugin_install" />
+		<hook src="hooks/patch-android-studio-check.js" type="before_plugin_add" />
+		<hook src="hooks/patch-android-studio-check.js" type="before_build" />
+		<hook src="hooks/patch-android-studio-check.js" type="before_run" />
+		<hook src="hooks/patch-android-studio-check.js" type="before_plugin_rm" />
+
+		<framework src="com.google.android.exoplayer:exoplayer:2.8.2"/>
+		<framework src="com.squareup.picasso:picasso:2.5.2"/>
+
+		<config-file target="res/xml/config.xml" parent="/*">
+			<feature name="VideoPlayer">
+				<param name="android-package" value="com.danleech.cordova.plugin.videoplayer.VideoPlayerPlugin" />
+			</feature>
+		</config-file>
+		<config-file target="AndroidManifest.xml" parent="/manifest">
+			<uses-permission android:name="android.permission.INTERNET" />
+		</config-file>
+		<config-file target="AndroidManifest.xml" parent="/manifest/application">
+			<activity android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode" android:name="com.danleech.cordova.plugin.videoplayer.VideoPlayerActivity" android:launchMode="singleTop" android:theme="@style/VideoPlayerTheme"></activity>
+		</config-file>
+		<source-file src="src/android/src/CallbackResponse.java" target-dir="src/com/danleech/cordova/plugin/videoplayer" />
+		<source-file src="src/android/src/FakeR.java" target-dir="src/com/danleech/cordova/plugin/videoplayer" />
+		<source-file src="src/android/src/VideoPlayerActivity.java" target-dir="src/com/danleech/cordova/plugin/videoplayer" />
+		<source-file src="src/android/src/VideoPlayerPlugin.java" target-dir="src/com/danleech/cordova/plugin/videoplayer" />
+
+		<source-file src="src/android/res/drawable/vp_ic_fast_forward.xml" target-dir="res/drawable"/>
+		<source-file src="src/android/res/drawable/vp_ic_fast_rewind.xml" target-dir="res/drawable"/>
+		<source-file src="src/android/res/drawable/vp_ic_pause.xml" target-dir="res/drawable"/>
+		<source-file src="src/android/res/drawable/vp_ic_play.xml" target-dir="res/drawable"/>
+		<source-file src="src/android/res/drawable/vp_ic_skip_next.xml" target-dir="res/drawable"/>
+		<source-file src="src/android/res/drawable/vp_ic_skip_previous.xml" target-dir="res/drawable"/>
+
+		<source-file src="src/android/res/layout/vp_activity_video_player.xml" target-dir="res/layout"/>
+		<source-file src="src/android/res/layout/exo_playback_control_view.xml" target-dir="res/layout"/>
+		<source-file src="src/android/res/layout/exo_rounded_corners.xml" target-dir="res/layout"/>
+		<source-file src="src/android/res/layout/exo_simple_player_view.xml" target-dir="res/layout"/>
+
+		<source-file src="src/android/res/values/videoplayer_constants.xml" target-dir="res/values"/>
+		<source-file src="src/android/res/values/videoplayer_ids.xml" target-dir="res/values"/>
+		<source-file src="src/android/res/values/videoplayer_styles.xml" target-dir="res/values"/>
+	</platform>
+</plugin>

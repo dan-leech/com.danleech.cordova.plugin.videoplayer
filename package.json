@@ -1,0 +1,14 @@
+{
+  "name": "com.danleech.cordova.plugin.videoplayer",
+  "version": "1.0.0",
+  "description": "Video player plugin",
+  "keywords": [
+    "cordova",
+    "video",
+    "ecosystem:cordova",
+    "cordova:android",
+    "cordova:ios"
+  ],
+  "author": "Daniil Kostin",
+  "license": "Apache 2.0"
+}
