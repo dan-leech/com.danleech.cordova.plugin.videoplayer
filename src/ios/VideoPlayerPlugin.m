@@ -79,6 +79,7 @@ NSString * const DEFAULT_IMAGE_SCALE = @"center";
 }
 
 -(void)play:(CDVInvokedUrlCommand *) command type:(NSString *) type {
+    NSLog(@"play called");
     callbackId = command.callbackId;
     NSString *mediaUrl  = [command.arguments objectAtIndex:0];
     [self parseOptions:[command.arguments objectAtIndex:1] type:type];
@@ -87,6 +88,7 @@ NSString * const DEFAULT_IMAGE_SCALE = @"center";
 }
 
 -(void)stop:(CDVInvokedUrlCommand *) command type:(NSString *) type {
+    NSLog(@"stop called");
     callbackId = command.callbackId;
     if (moviePlayer.player) {
         [moviePlayer.player pause];
@@ -108,6 +110,7 @@ NSString * const DEFAULT_IMAGE_SCALE = @"center";
 }
 
 -(void) setBackgroundColor:(NSString *)color {
+    NSLog(@"setbackgroundcolor called");
     if ([color hasPrefix:@"#"]) {
         // HEX value
         unsigned rgbValue = 0;
@@ -128,6 +131,7 @@ NSString * const DEFAULT_IMAGE_SCALE = @"center";
 }
 
 -(UIImage*)getImage: (NSString *)imageName {
+    NSLog(@"getimage called");
     UIImage *image = nil;
     if (imageName != (id)[NSNull null]) {
         if ([imageName hasPrefix:@"http"]) {
@@ -153,6 +157,7 @@ NSString * const DEFAULT_IMAGE_SCALE = @"center";
 }
 
 - (void)orientationChanged:(NSNotification *)notification {
+    NSLog(@"orientationchanged called");
     if (imageView != nil) {
         // adjust imageView for rotation
         imageView.bounds = moviePlayer.contentOverlayView.bounds;
@@ -161,22 +166,23 @@ NSString * const DEFAULT_IMAGE_SCALE = @"center";
 }
 
 -(void)setImage:(NSString*)imagePath withScaleType:(NSString*)imageScaleType {
+    NSLog(@"setimage called");
     imageView = [[UIImageView alloc] initWithFrame:self.viewController.view.bounds];
+
     if (imageScaleType == nil) {
         NSLog(@"imagescaletype was NIL");
         imageScaleType = DEFAULT_IMAGE_SCALE;
     }
+
     if ([imageScaleType isEqualToString:@"stretch"]){
         // Stretches image to fill all available background space, disregarding aspect ratio
         imageView.contentMode = UIViewContentModeScaleToFill;
-
     } else if ([imageScaleType isEqualToString:@"fit"]) {
         // fits entire image perfectly
         imageView.contentMode = UIViewContentModeScaleAspectFit;
     } else if ([imageScaleType isEqualToString:@"aspectStretch"]) {
         // Stretches image to fill all possible space while retaining aspect ratio
         imageView.contentMode = UIViewContentModeScaleAspectFill;
-
     } else {
         // Places image in the center of the screen
         imageView.contentMode = UIViewContentModeCenter;
@@ -187,26 +193,55 @@ NSString * const DEFAULT_IMAGE_SCALE = @"center";
 }
 
 -(void)startPlayer:(NSString*)uri {
-
+    NSLog(@"startplayer called");
     NSURL *url             =  [NSURL URLWithString:uri];
-    AVPlayer *movie        =  [AVPlayer playerWithURL:url];
-    if ([mOrientation isEqualToString:@"landscape"]) {
-        moviePlayer            =  [[LandscapeAVPlayerViewController alloc] init];
-    } else if ([mOrientation isEqualToString:@"portrait"]) {
-        moviePlayer            =  [[PortraitAVPlayerViewController alloc] init];
-    } else {
-        moviePlayer            =  [[AVPlayerViewController alloc] init];
-    }
+    movie                  =  [AVPlayer playerWithURL:url];
+
+    // handle orientation
+    [self handleOrientation];
+
+    // handle gestures
+    [self handleGestures];
 
     [moviePlayer setPlayer:movie];
     [moviePlayer setShowsPlaybackControls:YES];
+    [moviePlayer setUpdatesNowPlayingInfoCenter:YES];
+
     if(@available(iOS 11.0, *)) { [moviePlayer setEntersFullScreenWhenPlaybackBegins:YES]; }
 
-    //present modally so we get a close button
+    // present modally so we get a close button
     [self.viewController presentViewController:moviePlayer animated:YES completion:^(void){
         //let's start this bitch.
         [moviePlayer.player play];
     }];
+
+    // add audio image and background color
+    if ([videoType isEqualToString:TYPE_AUDIO]) {
+        if (imageView != nil) {
+            [moviePlayer.contentOverlayView setAutoresizesSubviews:YES];
+            [moviePlayer.contentOverlayView addSubview:imageView];
+        }
+        moviePlayer.contentOverlayView.backgroundColor = backgroundColor;
+        [self.viewController.view addSubview:moviePlayer.view];
+    }
+
+    // setup listners
+    [self handleListeners];
+}
+
+- (void) handleListeners {
+
+    // Listen for re-maximize
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(appDidBecomeActive:)
+                                                 name:UIApplicationDidBecomeActiveNotification
+                                               object:nil];
+
+    // Listen for minimize
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(appDidEnterBackground:)
+                                                 name:UIApplicationDidEnterBackgroundNotification
+                                               object:nil];
 
     // Listen for playback finishing
     [[NSNotificationCenter defaultCenter] addObserver:self
@@ -243,7 +278,64 @@ NSString * const DEFAULT_IMAGE_SCALE = @"center";
                                                  name:UIDeviceOrientationDidChangeNotification
                                                object:nil];
 
+- (void) handleGestures {
+    // Get buried nested view
+    UIView *contentView = [moviePlayer.view valueForKey:@"contentView"];
 
+    // loop through gestures, remove swipes
+    for (UIGestureRecognizer *recognizer in contentView.gestureRecognizers) {
+        NSLog(@"gesture loop ");
+        NSLog(@"%@", recognizer);
+        if ([recognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
+            [contentView removeGestureRecognizer:recognizer];
+        }
+        if ([recognizer isKindOfClass:[UIPinchGestureRecognizer class]]) {
+            [contentView removeGestureRecognizer:recognizer];
+        }
+        if ([recognizer isKindOfClass:[UIRotationGestureRecognizer class]]) {
+            [contentView removeGestureRecognizer:recognizer];
+        }
+        if ([recognizer isKindOfClass:[UILongPressGestureRecognizer class]]) {
+            [contentView removeGestureRecognizer:recognizer];
+        }
+        if ([recognizer isKindOfClass:[UIScreenEdgePanGestureRecognizer class]]) {
+            [contentView removeGestureRecognizer:recognizer];
+        }
+        if ([recognizer isKindOfClass:[UISwipeGestureRecognizer class]]) {
+            [contentView removeGestureRecognizer:recognizer];
+        }
+    }
+}
+
+- (void) handleOrientation {
+    // hnadle the subclassing of the view based on the orientation variable
+    if ([mOrientation isEqualToString:@"landscape"]) {
+        moviePlayer            =  [[LandscapeAVPlayerViewController alloc] init];
+    } else if ([mOrientation isEqualToString:@"portrait"]) {
+        moviePlayer            =  [[PortraitAVPlayerViewController alloc] init];
+    } else {
+        moviePlayer            =  [[AVPlayerViewController alloc] init];
+    }
+}
+
+- (void) appDidEnterBackground:(NSNotification*)notification {
+    NSLog(@"appDidEnterBackground");
+
+    if (moviePlayer && movie && videoType == TYPE_AUDIO)
+    {
+        NSLog(@"did set player layer to nil");
+        [moviePlayer setPlayer: nil];
+    }
+}
+
+- (void) appDidBecomeActive:(NSNotification*)notification {
+    NSLog(@"appDidBecomeActive");
+
+    if (moviePlayer && movie && videoType == TYPE_AUDIO)
+    {
+        NSLog(@"did reinstate playerlayer");
+        [moviePlayer setPlayer:movie];
+    }
 }
 
 - (void) moviePlayBackDidFinish:(NSNotification*)notification {
