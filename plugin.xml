@@ -55,7 +55,7 @@
 		<framework src="com.squareup.picasso:picasso:2.5.2"/>
 
 		<config-file target="res/xml/config.xml" parent="/*">
-			<feature name="VideoPlayer">
+			<feature name="VideoPlayerPlugin">
 				<param name="android-package" value="com.danleech.cordova.plugin.videoplayer.VideoPlayerPlugin" />
 			</feature>
 		</config-file>
